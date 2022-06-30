@@ -1,10 +1,12 @@
 import 'package:path_provider/path_provider.dart';
+import 'package:nooks/permissions.dart';
+import 'package:image/image.dart' as image;
 import 'dart:io';
+
 import 'book.dart';
 import 'package:epub_view/epub_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image/image.dart' as image;
 
 void main() => runApp(const MyApp());
 
@@ -20,9 +22,12 @@ class _MyAppState extends State<MyApp>{
   Widget build(BuildContext context) => MaterialApp(
     title: 'Epub demo',
     theme: ThemeData(
-      primarySwatch: Colors.orange,
+      primarySwatch: Colors.blue,
       brightness: Brightness.light,
-      backgroundColor: Colors.orangeAccent
+    ),
+    darkTheme: ThemeData(
+      primarySwatch: Colors.blue,
+      brightness: Brightness.dark,
     ),
     debugShowCheckedModeBanner: false,
     home: const MyHomePage(),
@@ -42,15 +47,16 @@ class _MyHomePageState extends State<MyHomePage> {
   final List<String> _title = [];
   final List<String> _author = [];
   final List<File> _path = [];
-  final List<image.Image> _image = [];
+  final List<String> _image = [];
 
   late EpubBook epubBook;
   late ByteData bytes;
   late List<int> listInt;
 
   late Directory? appDocDir;
-
   late File fileName;
+
+  final Directory coverImageFolder = Directory('/storage/emulated/0/Documents/CoverImage/');
 
   Future<void> _displays() async {
     _title.clear();
@@ -58,23 +64,35 @@ class _MyHomePageState extends State<MyHomePage> {
     _author.clear();
     _image.clear();
 
-    appDocDir = await getExternalStorageDirectory();
+    if(await coverImageFolder.exists()){
+      await coverImageFolder.delete(recursive: true);
+    }
+    await coverImageFolder.create(recursive: true);
+
+    appDocDir = Directory('/storage/emulated/0/Documents/');
     List<FileSystemEntity> entities = await appDocDir!.list().toList();
     Iterable<File> files = entities.whereType<File>();
+
     for (int index = 0; index < files.length; index++) {
       listInt = await File(files.elementAt(index).path).readAsBytes();
       epubBook = await EpubReader.readBook(listInt);
+
       setState(() {
         _path.add(files.elementAt(index));
         _title.add(epubBook.Title!);
         _author.add(epubBook.Author!);
-        _image.add(epubBook.CoverImage!);
+        _image.add('storage/emulated/0/Documents/CoverImage/${_title[index]}.png');
       });
+
+      if(!(await File('storage/emulated/0/Documents/CoverImage/${_title[index]}.png').exists())){
+        File('storage/emulated/0/Documents/CoverImage/${_title[index]}.png').writeAsBytesSync(image.encodePng(epubBook.CoverImage!));
+      }
     }
   }
 
   @override
   void initState() {
+    requestPermission();
     _displays();
     super.initState();
   }
@@ -83,24 +101,24 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ma bibliothèque'),
-        centerTitle: true,
-        actions: [IconButton(onPressed: _displays, icon: Icon(Icons.refresh))],
-
+        title: const Text('Bookshelf',),
+        actions: [
+          IconButton(onPressed: _displays, icon: const Icon(Icons.refresh)),
+        ],
       ),
-      body: Container(
-          decoration: BoxDecoration(
-            color: Colors.cyanAccent
-          ),
-          child : ListView.builder(
+      body: ListView.builder(
           itemCount: _author.length,
           itemBuilder: (context, index) {
             return Book(
               path: _path[index],
               title: _title[index],
               author: _author[index],
+              coverImage: _image[index],
             );
-          })),
+          }),
     );
   }
 }
+
+
+

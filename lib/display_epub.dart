@@ -5,6 +5,7 @@ import 'dart:io';
 
 class displays extends StatefulWidget {
   final File path;
+
   displays({
     required this.path,
   });
@@ -40,7 +41,6 @@ class _MyHomePageState extends State<displays> {
             textAlign: TextAlign.start,
           ),
         ),
-        backgroundColor: Colors.deepOrangeAccent,
       ),
       drawer: Drawer(
         child: EpubViewTableOfContents(controller: _epubReaderController,),
@@ -53,14 +53,14 @@ class _MyHomePageState extends State<displays> {
         ),
         controller: _epubReaderController,
       ),
-        bottomNavigationBar: BottomAppBar(
-          child:IconButton(
-            icon: const Icon(Icons.arrow_back),
-            color: Colors.black,
-            padding: EdgeInsets.fromLTRB(0, 0, 350, 0),
-            onPressed: () {Navigator.pop(context);},
-          ),
-        )
+      bottomNavigationBar: BottomAppBar(
+        child: IconButton(
+          onPressed: () {Navigator.pop(context);},
+          icon: const Icon(Icons.arrow_back),
+          padding: const EdgeInsets.fromLTRB(30, 0, 0, 0),
+          alignment: Alignment.centerLeft,
+        ),
+      ),
     );
   }
 }
